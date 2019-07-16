@@ -1,0 +1,87 @@
+server:
+  port: 8093
+spring: 
+  application: 
+   name: jczl
+   
+   # 指定静态资源的路径
+  thymeleaf:
+    prefix: classpath:/public/
+    mode: LEGACYHTML5
+  resources: 
+   static-locations: classpath:/static/,classpath:/public/,classpath:/META-INF/resources/
+   
+template:
+   eventcomplete: 诉求办结通知
+#社区小程序
+wxa: 
+  appid: wx090334eab66ec5b3
+  appsecret: 25e4af89df507f218f5d83ccaaf6a524
+bpm:
+  actdefid: 'sqsj:1:4211728162898944'
+
+wechatapp: 
+  wx28e4b3f914e92274: mst
+  wx962427d2b0b6f17f: xfej
+  ww5162f6b1a3448553: sgzs
+  wx5af2b26bde51647c: gs
+  corpid: wweaab50b046253c5b
+  mst: 
+    appid: wx9aba54435b623c43
+    secret: 29e7e105dec68bb106e27c5714d44e2f
+    template_id: PQomRVv0IkIgznPXK4bQ6-6dKk7yx3KK7cJKEkv5FvQ
+  sgzs:
+    appid: wx5945748166c4a7a5
+    secret: 29fe22597ecc305558fe7c0dbf44c1a8
+    template_id: M2iafPHrjttK5TPz-7tABBp6HmSciyznL5_Hs81eI-g
+  xfej:
+    appid: wx962427d2b0b6f17f
+    secret: adbf26493af5cfada678e9b996929155
+  csbd:
+    appid: wxb4a892c4b4a0f733
+    secret: 8db8b5eccd4d234b0b848830e34f2b46
+  dyrh:
+    appid: wx7f1005fad758254a
+    secret: 8d89ca82fd412d7e34fdac6c1ce73eb7
+  sqyzs:
+    appid: wx3f0b2c93e01efc4f
+    secret: 6baea8b87e77a8522c4deecd95732a6d
+  gs:
+    appid: wx5af2b26bde51647c
+    secret: 8201107762a83ed8eda41621a743f1bc
+  zhzf:
+     appid: wx7353ae5bbb13feac
+     secret: 8ffe796e58ddbbece1843d2804356105
+  jsjb:
+     appid: wx11ef1484417d4984
+     secret: 8aeaa5922f6688a56e10f656e51d4f76
+  hlzw:
+     appid: wx8a7f800eaa56649e
+     secret: a4e9ae770d52cf376fd6fc8f758fbd2c
+gzh:
+   sheQuYun: 
+      initId: gh_4dc07c712da4
+   
+aip:
+  apiKey: FGFHZztkiKIWvBVtpCjLr6xo
+  secretKey: 7b9b676aad24f409b3bf7e0b1e051fcd
+  appid: 9958725
+unit:
+  apiKey: LltUWBnQAXOnHcYcAIf6n2cE
+  secretKey: sYrGK1eWHfeUiZoIApuhTwsxDsr2rikM
+  sceneid: 16748
+  
+# 高得地图key
+amap:
+   key: fb49c6761ac1fa59d69e0d54ba47a918
+
+# 数据库链接
+datasource:
+   master: 
+      url: jdbc:mysql://192.168.100.13:3306/dev_jczl?useUnicode=true&characterEncoding=utf-8&useSSL=true
+
+# hbase配置信息
+#hbase:
+#  config:
+#    hbase.zookeeper.quorum: 192.168.100.23
+#    hbase.zookeeper.property.clientPort: 2181

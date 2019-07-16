@@ -1,0 +1,12 @@
+spring:
+  cloud:
+    config:
+      name: application
+      uri: http://config.shequyun.cn
+      username: user
+      password: password123
+      label: master   # 当configserver的后端存储是Git时，默认就是master 
+ 
+    
+    
+    
