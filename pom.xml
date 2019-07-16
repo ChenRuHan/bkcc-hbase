@@ -70,115 +70,12 @@
             <version>3.10-FINAL</version>
         </dependency>
     
-    <!--读取excel文件-->
-        <dependency>
-            <groupId>org.apache.poi</groupId>
-            <artifactId>poi</artifactId>
-            <version>3.10-FINAL</version>
-        </dependency>
-
-
-		<dependency>
-		    <groupId>com.belerweb</groupId>
-		    <artifactId>pinyin4j</artifactId>
-		</dependency>
-
-        <dependency>
-		    <groupId>org.springframework.boot</groupId>
-		    <artifactId>spring-boot-starter-websocket</artifactId>
-		</dependency>
-        
 		<dependency>
 			<groupId>com.bkcc</groupId>
 			<artifactId>bkcc-upmscontext</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
 		
-		<!-- mp3转pcm -->
-		<dependency>
-			<groupId>com.googlecode.soundlibs</groupId>
-			<artifactId>mp3spi</artifactId>
-			<version>1.9.5.4</version>
-		</dependency>
-		<dependency>
-		    <groupId>org.springframework.boot</groupId>
-		    <artifactId>spring-boot-starter-data-elasticsearch</artifactId>
-		    <exclusions>
-		    	<exclusion>
-		    		<groupId>org.slf4j</groupId>
-		    		<artifactId>slf4j-api</artifactId>
-		    	</exclusion>
-		    	<exclusion>
-		    		<groupId>org.slf4j</groupId>
-		    		<artifactId>jcl-over-slf4j</artifactId>
-		    	</exclusion>
-		    </exclusions>
-		</dependency>
-		
-		<dependency>
-			<groupId>com.baidu.aip</groupId>
-			<artifactId>java-sdk</artifactId>
-			<version>4.1.1</version>
-		</dependency>
-		<dependency>
-		    <groupId>com.github.pagehelper</groupId>
-		    <artifactId>pagehelper</artifactId>
-		    <version>5.1.2</version>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-starter-eureka</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>de.codecentric</groupId>
-			<artifactId>spring-boot-admin-starter-client</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>io.springfox</groupId>
-			<artifactId>springfox-swagger2</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>io.springfox</groupId>
-			<artifactId>springfox-swagger-ui</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-starter-feign</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-starter-hystrix</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>dom4j</groupId>
-			<artifactId>dom4j</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>ch.qos.logback</groupId>
-			<artifactId>logback-classic</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-activemq</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-starter-config</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-thymeleaf</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>weixin-aes</groupId>
-			<artifactId>weixin-aes</artifactId>
-			<version>1.0</version>
-		</dependency>
-		<!-- 爬虫网页抓取工具包 -->
-	    <dependency>
-	        <groupId>net.sourceforge.htmlunit</groupId>
-	        <artifactId>htmlunit</artifactId>
-	    </dependency>
 	</dependencies>
 	<build>
 		<finalName>bkcc-hbase</finalName>
