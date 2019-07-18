@@ -1,9 +1,12 @@
 package com.bkcc.hbase.conifg;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -45,4 +48,12 @@ public class HBaseConfig {
         }
         return configuration;
     }
+    
+
+    @Bean
+    public Connection connection() throws IOException {
+    	Connection connection = ConnectionFactory.createConnection(configuration());
+		return connection;
+	}
+    
 }

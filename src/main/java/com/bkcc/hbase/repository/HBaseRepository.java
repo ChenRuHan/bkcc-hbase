@@ -5,6 +5,7 @@ import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,16 +21,18 @@ import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.Connection;
-import org.apache.hadoop.hbase.client.ConnectionFactory;
+import org.apache.hadoop.hbase.client.Delete;
+import org.apache.hadoop.hbase.client.Get;
+import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.client.coprocessor.AggregationClient;
 import org.apache.hadoop.hbase.client.coprocessor.LongColumnInterpreter;
 import org.apache.hadoop.hbase.filter.PageFilter;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.hadoop.hbase.HbaseTemplate;
-import org.springframework.data.hadoop.hbase.RowMapper;
 
 import com.alibaba.fastjson.JSONObject;
 import com.bkcc.hbase.annotations.HBaseColumn;
@@ -48,7 +51,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public abstract class HBaseRepository<T extends Serializable> {
-
+	
 	/**
 	 * 【描 述】：HBase配置
 	 *
@@ -56,14 +59,14 @@ public abstract class HBaseRepository<T extends Serializable> {
 	 */
 	@Autowired
 	private Configuration config;
-	
+
 	/**
-	 * 【描 述】：HBase模版
+	 * 【描 述】：HBase链接
 	 *
 	 *  @since  Jun 26, 2019 v1.0
 	 */
 	@Autowired
-	private HbaseTemplate hbaseTemplate;
+	private Connection connection;
 	
 	/**
 	 * 【描 述】：表名称
@@ -144,10 +147,22 @@ public abstract class HBaseRepository<T extends Serializable> {
 	 * @param rowKey
 	 * @param clazz
 	 * @return
+	 * @throws IOException 
 	 * @since Jun 26, 2019
 	 */
-	public T get(String rowKey) {
-		return hbaseTemplate.get(tableName, rowKey, familyColumn, getRowMapper());
+	public T get(String rowKey){
+		Result result = null;
+		try {
+			Table table = getTable();
+			Get get = new Get(Bytes.toBytes(rowKey));
+			if(get.isCheckExistenceOnly()){
+				return null;
+			}
+			result = table.get(get);
+		} catch (IOException e) {
+			log.error(e.getMessage(), e);
+		}
+		return changeResult2T(result);
 	}
 	
 	/**
@@ -159,6 +174,7 @@ public abstract class HBaseRepository<T extends Serializable> {
 	 * @param pageSize 查询数量，null或小于0代表查询全部
 	 * @param clazz
 	 * @return
+	 * @throws IOException 
 	 * @since Jun 27, 2019
 	 */
 	public List<T> list(String beginRowKey, String endRowKey, Long pageSize){
@@ -171,9 +187,10 @@ public abstract class HBaseRepository<T extends Serializable> {
 	 * @param tableName
 	 * @param clazz
 	 * @return
+	 * @throws IOException 
 	 * @since Jun 26, 2019
 	 */
-	public List<T> listAll(){
+	public List<T> listAll() throws IOException{
 		return listByScan(getScan(null, null, null));
 	}
 	
@@ -182,22 +199,17 @@ public abstract class HBaseRepository<T extends Serializable> {
 	 *
 	 * @param tableName
 	 * @param rowKey
+	 * @throws IOException 
 	 * @since Jun 26, 2019
 	 */
-	public void delete(String rowKey) {
-		hbaseTemplate.delete(tableName, rowKey, familyColumn);
-	}
-	
-	/**
-	 * 【描 述】：删除某列数据
-	 *
-	 * @param tableName
-	 * @param rowKey
-	 * @param qualifier 列名称
-	 * @since Jun 26, 2019
-	 */
-	public void delete(String rowKey, String qualifier) {
-		hbaseTemplate.delete(tableName, rowKey, familyColumn, qualifier);
+	public void delete(String rowKey){
+		try {
+			Table table = getTable();
+			Delete delete = new Delete(Bytes.toBytes(rowKey));
+			table.delete(delete);;
+		} catch (IOException e) {
+			log.error(e.getMessage(), e);
+		}
 	}
 	
 	/**
@@ -240,44 +252,61 @@ public abstract class HBaseRepository<T extends Serializable> {
 		if(StringUtils.isBlank(rowKey)) {
 			throw new NullPointerException("RowKey为空，插入失败");
 		}
-		log.debug("# hbase插入数据rowKey==>[{}],data==>[{}]", rowKey, map);
-		for(String qualifier : map.keySet()) {
-			hbaseTemplate.put(tableName, rowKey, familyColumn, qualifier, Bytes.toBytes(map.get(qualifier).toString()));
+		try {
+			
+			Put put = new Put(Bytes.toBytes(rowKey));
+	    	log.debug("# hbase插入数据rowKey==>[{}],data==>[{}]", rowKey, map);
+			for(String qualifier : map.keySet()) {
+				put.addColumn(Bytes.toBytes(familyColumn), Bytes.toBytes(qualifier), Bytes.toBytes(map.get(qualifier).toString())) ;
+			}
+			Table table = getTable();
+	        table.put(put);
+		} catch (IOException e1) {
+			log.error(e1.getMessage(), e1);
 		}
 	}
 	
 	
+	
 	/** ======================================================== 私有方法 ======================================================== */
+	
 	/**
-	 * 【描 述】：行解析器
+	 * 【描 述】：获取Table实体
+	 *
+	 * @return
+	 * @throws IOException
+	 * @since Jul 18, 2019
+	 */
+	private Table getTable() throws IOException {
+		Table table = connection.getTable(TableName.valueOf(tableName));
+		return table;
+	}
+	/**
+	 * 【描 述】：结果解析器
 	 *
 	 * @param clazz
 	 * @return
 	 * @since Jun 27, 2019
 	 */
-	private RowMapper<T> getRowMapper() {
-		RowMapper<T> mapper = new RowMapper<T>() {
-			@Override
-			public T mapRow(Result result, int rowNum) throws Exception {
-				T t = null;
-				if(result == null || result.isEmpty()) {
-					return t;
-				}
-				List<Cell> cellList = result.listCells();
-				JSONObject json = new JSONObject();
-				String row = new String(result.getRow());
-				json.put("rowKey", row);
-				for(Cell cell : cellList) {
-					String cellName = new String(CellUtil.cloneQualifier(cell));
-					String value = new String(CellUtil.cloneValue(cell));
-					json.put(cellName, value);
-				}
-				t = JSONObject.parseObject(json.toJSONString(), clazz);
-				return t;
-			}
-		};
-		return mapper;
+	private T changeResult2T(Result result) {
+		T t = null;
+		if(result == null || result.isEmpty()) {
+			return t;
+		}
+		List<Cell> cellList = result.listCells();
+		JSONObject json = new JSONObject();
+		String row = new String(result.getRow());
+		json.put("rowKey", row);
+		for(Cell cell : cellList) {
+			String cellName = new String(CellUtil.cloneQualifier(cell));
+			String value = new String(CellUtil.cloneValue(cell));
+			json.put(cellName, value);
+		}
+		t = JSONObject.parseObject(json.toJSONString(), clazz);
+		return t;
 	}
+	
+	
 	
 	/**
 	 * 【描 述】：count表
@@ -315,10 +344,21 @@ public abstract class HBaseRepository<T extends Serializable> {
 	 * @param scan
 	 * @param clazz
 	 * @return
+	 * @throws IOException 
 	 * @since Jun 26, 2019
 	 */
 	private List<T> listByScan(Scan scan){
-		return hbaseTemplate.find(tableName, scan, getRowMapper());
+		List<T> list = new ArrayList<>();
+		try {
+			Table table = getTable();
+			ResultScanner results = table.getScanner(scan);
+			for (Result result : results){
+				list.add(changeResult2T(result));
+			}
+		} catch (IOException e) {
+			log.error(e.getMessage(), e);
+		}
+		return list;
 	}
 	
 
@@ -355,10 +395,8 @@ public abstract class HBaseRepository<T extends Serializable> {
 	 */
 	private void createTable() throws IOException {
 		log.debug("# hbase 开始创建表:[{}]", tableName);
-		Connection connection = null;
         Admin admin = null;
         try {
-			connection = ConnectionFactory.createConnection(config);
 			admin = connection.getAdmin();
 			boolean exists = admin.tableExists(TableName.valueOf(tableName));
 			if(!exists) {
@@ -379,14 +417,8 @@ public abstract class HBaseRepository<T extends Serializable> {
                 	throw e;
                 }
             }
-            if (connection != null) {
-                try {
-                    connection.close();
-                } catch (IOException e) {
-                	throw e;
-                }
-            }
 		}
 	}
+	
 	
 }///:~
