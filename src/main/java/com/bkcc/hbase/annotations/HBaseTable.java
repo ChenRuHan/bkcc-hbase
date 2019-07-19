@@ -31,7 +31,15 @@ public @interface HBaseTable {
 	String tableName();
 	
 	/**
-	 * 【描 述】：列族名称默认fc
+	 * 【描 述】：命名空间，默认为default，可以自己根据业务逻辑自己设置
+	 *
+	 * @return
+	 * @since Jul 19, 2019
+	 */
+	String nameSpace() default "default";
+	
+	/**
+	 * 【描 述】：列族名称 默认fc
 	 *
 	 * @return
 	 * @since Jul 1, 2019
@@ -39,7 +47,7 @@ public @interface HBaseTable {
 	String familyColumn() default "fc";
 	
 	/**
-	 * 【描 述】：检查是否创建表
+	 * 【描 述】：检查是否创建表和命名空间
 	 *
 	 * @return
 	 * @since Jul 1, 2019
