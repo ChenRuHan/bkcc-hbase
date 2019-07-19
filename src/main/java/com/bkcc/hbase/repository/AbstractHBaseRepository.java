@@ -18,8 +18,6 @@ import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.CellUtil;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
-import org.apache.hadoop.hbase.NamespaceDescriptor;
-import org.apache.hadoop.hbase.NamespaceNotFoundException;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.Connection;
@@ -52,7 +50,7 @@ import lombok.extern.slf4j.Slf4j;
  *  @since          Jun 26, 2019 
  */
 @Slf4j
-public abstract class HBaseRepository<T extends Serializable> {
+public abstract class AbstractHBaseRepository<T extends Serializable> {
 	
 	/**
 	 * 【描 述】：HBase配置
@@ -117,7 +115,7 @@ public abstract class HBaseRepository<T extends Serializable> {
 		familyColumn = table.familyColumn();
 		log.debug("# tableName==>[{}], familyColnum==>[{}]", tableName, familyColumn);
 		if(table.createTable()) {
-			createTableAndNameSpace();
+			createTable();
 		}
 		log.debug("# 初始化hbase表信息---end");
 	}
@@ -403,18 +401,11 @@ public abstract class HBaseRepository<T extends Serializable> {
 	 * @throws IOException 
 	 * @since Jun 26, 2019
 	 */
-	private void createTableAndNameSpace() throws IOException {
-		log.debug("# hbase 开始创建表和命名空间:[{}]", tableName);
+	private void createTable() throws IOException {
+		log.debug("# hbase 开始创建表:[{}]", tableName);
         Admin admin = null;
         try {
 			admin = connection.getAdmin();
-			try {
-				admin.getNamespaceDescriptor(nameSpace);
-			} catch (NamespaceNotFoundException e) {
-				log.debug("# 创建命名空间[{}]", nameSpace);
-				admin.createNamespace(NamespaceDescriptor.create(nameSpace).build());
-			}
-			admin.listNamespaceDescriptors();
 			boolean exists = admin.tableExists(TableName.valueOf(tableName));
 			if(!exists) {
                 HTableDescriptor tableDesc = new HTableDescriptor(TableName.valueOf(tableName));

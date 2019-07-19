@@ -31,7 +31,7 @@ public @interface HBaseTable {
 	String tableName();
 	
 	/**
-	 * 【描 述】：命名空间，默认为default，可以自己根据业务逻辑自己设置
+	 * 【描 述】：命名空间，默认为default，可以自己根据业务逻辑自己设置，命名空间需自己创建
 	 *
 	 * @return
 	 * @since Jul 19, 2019
@@ -47,7 +47,7 @@ public @interface HBaseTable {
 	String familyColumn() default "fc";
 	
 	/**
-	 * 【描 述】：检查是否创建表和命名空间
+	 * 【描 述】：检查是否创建表
 	 *
 	 * @return
 	 * @since Jul 1, 2019
