@@ -90,6 +90,13 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 	private String familyColumn;
 	
 	/**
+	 * 【描 述】：RowKey字段名称
+	 *
+	 *  @since  Jul 21, 2019 v1.0
+	 */
+	private String rowKeyField;
+	
+	/**
 	 * 【描 述】：范型
 	 *
 	 *  @since  Jul 1, 2019 v1.0
@@ -110,6 +117,18 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
             this.clazz = (Class<T>) claz;
         }
 		HBaseTable table = clazz.getAnnotation(HBaseTable.class);
+		Field[] fields = clazz.getDeclaredFields();
+		for(Field f : fields) {
+			try {
+				HBaseRowkey hb = f.getAnnotation(HBaseRowkey.class);
+				if(hb != null) {
+					rowKeyField = f.getName();
+					break;
+				}
+			} catch (IllegalArgumentException e) {
+				log.error(e.getMessage(), e);
+			}
+		}
 		nameSpace = table.nameSpace();
 		tableName = nameSpace + ":" + table.tableName();
 		familyColumn = table.familyColumn();
@@ -185,7 +204,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 	 * @throws IOException 
 	 * @since Jun 27, 2019
 	 */
-	public List<T> list(String beginRowKey, String endRowKey, Long pageSize){
+	public List<T> list(String beginRowKey, String endRowKey, Integer pageSize){
 		return listByScan(getScan(beginRowKey, endRowKey, pageSize));
 	}
 	
@@ -198,7 +217,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 	 * @throws IOException 
 	 * @since Jun 26, 2019
 	 */
-	public List<T> listAll() throws IOException{
+	public List<T> listAll(){
 		return listByScan(getScan(null, null, null));
 	}
 	
@@ -304,7 +323,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 		List<Cell> cellList = result.listCells();
 		JSONObject json = new JSONObject();
 		String row = new String(result.getRow());
-		json.put("rowKey", row);
+		json.put(rowKeyField, row);
 		for(Cell cell : cellList) {
 			String cellName = new String(CellUtil.cloneQualifier(cell));
 			String value = new String(CellUtil.cloneValue(cell));
@@ -379,7 +398,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 	 * @return
 	 * @since Jun 27, 2019
 	 */
-	private Scan getScan(String beginRowKey, String endRowKey, Long pageSize) {
+	private Scan getScan(String beginRowKey, String endRowKey, Integer pageSize) {
 		Scan scan = new Scan();
 		scan.addFamily(Bytes.toBytes(familyColumn));
 		if(StringUtils.isNotBlank(beginRowKey)) {

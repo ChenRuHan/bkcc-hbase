@@ -11,13 +11,35 @@ package com.bkcc.hbase.util;
 public class HBaseUtil {
 
 	/**
-	 * 【描 述】：获取时间戳反转值，长度为7位
+	 * 【描 述】：获取时间戳反转值，长度为13位
 	 *
 	 * @return
 	 * @since Jun 26, 2019
 	 */
-	public static Long getReverseCurrent() {
-		return (HBaseUtil.MY_MAX_VALUE - System.currentTimeMillis());
+	public static String getReverseCurrent() {
+		return fillKey((9999999999999L - System.currentTimeMillis()), 13);
+	}
+	
+	/**
+	 * 【描 述】：获取升序排列id
+	 *
+	 * @param key
+	 * @return
+	 * @since Jun 26, 2019
+	 */
+	public static String getAscId(Long max, Long id) {
+		return fillKey(max - id, (max+"").length());
+	}
+	
+	/**
+	 * 【描 述】：获取升序排列id
+	 *
+	 * @param key
+	 * @return
+	 * @since Jun 26, 2019
+	 */
+	public static String getAscId(Long id) {
+		return getAscId(MY_MAX_VALUE, id);
 	}
 	
 	/**
@@ -52,7 +74,7 @@ public class HBaseUtil {
 		return sb.toString();
 	}
 	
-	private final static Long MY_MAX_VALUE = 9999999999999L;
+	public final static Long MY_MAX_VALUE = 999999999L;
 	
 	private final static Integer MY_MAX_LENGTH = 9;
 	
