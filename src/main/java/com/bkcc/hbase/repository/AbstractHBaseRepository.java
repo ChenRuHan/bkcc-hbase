@@ -125,8 +125,6 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 		return countBySacn(getScan(null, null, null));
 	}
 	
-	
-	
 	/**
 	 * 【描 述】：根据多个RowKey查询，如果查询不到返回空集合
 	 *
@@ -135,14 +133,28 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 	 * @since Jun 26, 2019
 	 */
 	public List<T> list(List<String> rowKeyList){
-		List<T> list = new ArrayList<>();
-		for(String rowKey : rowKeyList) {
-			T t = get(rowKey);
-			if(t != null) {
-				list.add(t);
-			}
+		List<T> returnList = new ArrayList<>();
+		if(rowKeyList.isEmpty()) {
+			return returnList;
 		}
-		return list;
+		try {
+			Table table = getTable();
+			List<Get> getList = new ArrayList<>();
+			for(String rowKey : rowKeyList) {
+				Get get = new Get(Bytes.toBytes(rowKey));
+				getList.add(get);
+			}
+			Result[] results = table.get(getList);
+			if(results == null || results.length == 0) {
+				return returnList;
+			}
+			for(Result result : results) {
+				returnList.add(changeResult2T(result));
+			}
+		} catch (IOException e) {
+			log.error(e.getMessage(), e);
+		}
+		return returnList;
 	}
 	
 	/**
@@ -157,9 +169,6 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 		try {
 			Table table = getTable();
 			Get get = new Get(Bytes.toBytes(rowKey));
-			if(get.isCheckExistenceOnly()){
-				return null;
-			}
 			result = table.get(get);
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);
