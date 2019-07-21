@@ -11,17 +11,17 @@ package com.bkcc.hbase.util;
 public class HBaseUtil {
 
 	/**
-	 * 【描 述】：获取时间戳反转值，长度为13位
+	 * 【描 述】：获取升序排列的时间戳，长度为13位
 	 *
 	 * @return
 	 * @since Jun 26, 2019
 	 */
-	public static String getReverseCurrent() {
+	public static String getAscCurrent() {
 		return fillKey((9999999999999L - System.currentTimeMillis()), 13);
 	}
 	
 	/**
-	 * 【描 述】：获取升序排列id
+	 * 【描 述】：获取升序排列id（max - id），保持位数一致
 	 *
 	 * @param key
 	 * @return
@@ -32,7 +32,7 @@ public class HBaseUtil {
 	}
 	
 	/**
-	 * 【描 述】：获取升序排列id
+	 * 【描 述】：获取升序排列id（MY_MAX_VALUE-id），保持位数为9位
 	 *
 	 * @param key
 	 * @return
