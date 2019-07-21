@@ -103,51 +103,13 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 	 */
 	private Class<T> clazz;
 	
-	@SuppressWarnings("unchecked")
-	@PostConstruct
-	private void init() throws Exception{
-		log.debug("# 初始化hbase表信息---begin");
-		Type type = getClass().getGenericSuperclass();
-		if( !(type instanceof ParameterizedType) ){
-			return;
-		}
-        ParameterizedType pType = (ParameterizedType)type;
-        Type claz = pType.getActualTypeArguments()[0];
-        if( claz instanceof Class ){
-            this.clazz = (Class<T>) claz;
-        }
-		HBaseTable table = clazz.getAnnotation(HBaseTable.class);
-		Field[] fields = clazz.getDeclaredFields();
-		for(Field f : fields) {
-			try {
-				HBaseRowkey hb = f.getAnnotation(HBaseRowkey.class);
-				if(hb != null) {
-					rowKeyField = f.getName();
-					break;
-				}
-			} catch (IllegalArgumentException e) {
-				log.error(e.getMessage(), e);
-			}
-		}
-		nameSpace = table.nameSpace();
-		tableName = nameSpace + ":" + table.tableName();
-		familyColumn = table.familyColumn();
-		log.debug("# tableName==>[{}], familyColnum==>[{}]", tableName, familyColumn);
-		if(table.createTable()) {
-			createTable();
-		}
-		log.debug("# 初始化hbase表信息---end");
-	}
-	
 	/**
 	 * 【描 述】：count表
 	 *
-	 * @param tableName
 	 * @param beginRowKey
 	 * @param endRowKey
 	 * @return
-	 * @throws Throwable 
-	 * @since Jun 27, 2019
+	 * @since Jul 21, 2019
 	 */
 	public long count(String beginRowKey, String endRowKey) {
 		return countBySacn(getScan(beginRowKey, endRowKey, null));
@@ -156,9 +118,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 	/**
 	 * 【描 述】：count表
 	 *
-	 * @param tableName
 	 * @return
-	 * @throws Throwable 
 	 * @since Jun 27, 2019
 	 */
 	public long countAll() {
@@ -168,13 +128,28 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 	
 	
 	/**
+	 * 【描 述】：根据多个RowKey查询，如果查询不到返回空集合
+	 *
+	 * @param rowKeyList
+	 * @return List<T> 
+	 * @since Jun 26, 2019
+	 */
+	public List<T> list(List<String> rowKeyList){
+		List<T> list = new ArrayList<>();
+		for(String rowKey : rowKeyList) {
+			T t = get(rowKey);
+			if(t != null) {
+				list.add(t);
+			}
+		}
+		return list;
+	}
+	
+	/**
 	 * 【描 述】：根据RowKey查询，如果查询不到返回null
 	 *
-	 * @param tableName
 	 * @param rowKey
-	 * @param clazz
-	 * @return
-	 * @throws IOException 
+	 * @return T
 	 * @since Jun 26, 2019
 	 */
 	public T get(String rowKey){
@@ -195,14 +170,11 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 	/**
 	 * 【描 述】：根据RowKey范围查询列表数据
 	 *
-	 * @param tableName
 	 * @param beginRowKey
 	 * @param endRowKey
-	 * @param pageSize 查询数量，null或小于0代表查询全部
-	 * @param clazz
-	 * @return
-	 * @throws IOException 
-	 * @since Jun 27, 2019
+	 * @param pageSize
+	 * @return List<T>
+	 * @since Jul 21, 2019
 	 */
 	public List<T> list(String beginRowKey, String endRowKey, Integer pageSize){
 		return listByScan(getScan(beginRowKey, endRowKey, pageSize));
@@ -211,10 +183,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 	/**
 	 * 【描 述】：查询列表所有数据
 	 *
-	 * @param tableName
-	 * @param clazz
-	 * @return
-	 * @throws IOException 
+	 * @return List<T>
 	 * @since Jun 26, 2019
 	 */
 	public List<T> listAll(){
@@ -224,9 +193,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 	/**
 	 * 【描 述】：删除整条数据
 	 *
-	 * @param tableName
 	 * @param rowKey
-	 * @throws IOException 
 	 * @since Jun 26, 2019
 	 */
 	public void delete(String rowKey){
@@ -242,9 +209,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 	/**
 	 * 【描 述】：保存数据
 	 *
-	 * @param tableName
-	 * @param rowKey
-	 * @param keyValueMap 
+	 * @param t 实体 
 	 * @since Jun 26, 2019
 	 */
 	public void save(T t) {
@@ -296,6 +261,50 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 	
 	
 	/** ======================================================== 私有方法 ======================================================== */
+	
+
+	/**
+	 * 【描 述】：初始化
+	 *
+	 * @throws Exception
+	 * @since Jul 21, 2019
+	 */
+	@SuppressWarnings("unchecked")
+	@PostConstruct
+	private void init() throws Exception{
+		log.debug("# 初始化hbase表信息---begin");
+		Type type = getClass().getGenericSuperclass();
+		if( !(type instanceof ParameterizedType) ){
+			return;
+		}
+        ParameterizedType pType = (ParameterizedType)type;
+        Type claz = pType.getActualTypeArguments()[0];
+        if( claz instanceof Class ){
+            this.clazz = (Class<T>) claz;
+        }
+		HBaseTable table = clazz.getAnnotation(HBaseTable.class);
+		Field[] fields = clazz.getDeclaredFields();
+		for(Field f : fields) {
+			try {
+				HBaseRowkey hb = f.getAnnotation(HBaseRowkey.class);
+				if(hb != null) {
+					rowKeyField = f.getName();
+					break;
+				}
+			} catch (IllegalArgumentException e) {
+				log.error(e.getMessage(), e);
+			}
+		}
+		nameSpace = table.nameSpace();
+		tableName = nameSpace + ":" + table.tableName();
+		familyColumn = table.familyColumn();
+		log.debug("# tableName==>[{}], familyColnum==>[{}]", tableName, familyColumn);
+		if(table.createTable()) {
+			createTable();
+		}
+		log.debug("# 初始化hbase表信息---end");
+	}
+	
 	
 	/**
 	 * 【描 述】：获取Table实体
