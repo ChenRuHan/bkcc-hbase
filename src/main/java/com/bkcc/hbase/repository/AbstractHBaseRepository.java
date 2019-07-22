@@ -149,7 +149,10 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 				return returnList;
 			}
 			for(Result result : results) {
-				returnList.add(changeResult2T(result));
+				T t = changeResult2T(result);
+				if(t != null) {
+					returnList.add(t);
+				}
 			}
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);
@@ -197,6 +200,26 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 	 */
 	public List<T> listAll(){
 		return listByScan(getScan(null, null, null));
+	}
+	
+	/**
+	 * 【描 述】：批量删除整条数据
+	 *
+	 * @param rowKey
+	 * @since Jun 26, 2019
+	 */
+	public void delete(List<String> rowKeyList){
+		try {
+			Table table = getTable();
+			List<Delete> deletes = new ArrayList<>();
+			for(String rowKey : rowKeyList) {
+				Delete delete = new Delete(Bytes.toBytes(rowKey));
+				deletes.add(delete);
+			}
+			table.delete(deletes);
+		} catch (IOException e) {
+			log.error(e.getMessage(), e);
+		}
 	}
 	
 	/**
