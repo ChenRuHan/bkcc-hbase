@@ -38,6 +38,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.bkcc.hbase.annotations.HBaseColumn;
 import com.bkcc.hbase.annotations.HBaseRowkey;
 import com.bkcc.hbase.annotations.HBaseTable;
+import com.bkcc.util.mytoken.exception.RRException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -155,7 +156,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 				}
 			}
 		} catch (IOException e) {
-			log.error(e.getMessage(), e);
+			throw new RRException(e.getMessage(), e);
 		}
 		return returnList;
 	}
@@ -174,7 +175,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 			Get get = new Get(Bytes.toBytes(rowKey));
 			result = table.get(get);
 		} catch (IOException e) {
-			log.error(e.getMessage(), e);
+			throw new RRException(e.getMessage(), e);
 		}
 		return changeResult2T(result);
 	}
@@ -218,7 +219,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 			}
 			table.delete(deletes);
 		} catch (IOException e) {
-			log.error(e.getMessage(), e);
+			throw new RRException(e.getMessage(), e);
 		}
 	}
 	
@@ -234,7 +235,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 			Delete delete = new Delete(Bytes.toBytes(rowKey));
 			table.delete(delete);;
 		} catch (IOException e) {
-			log.error(e.getMessage(), e);
+			throw new RRException(e.getMessage(), e);
 		}
 	}
 	
@@ -268,9 +269,9 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 				key = StringUtils.isBlank(c.value()) ? key : c.value();
 				map.put(key, value);
 			} catch (IllegalArgumentException e) {
-				log.error(e.getMessage(), e);
+				throw new RRException(e.getMessage(), e);
 			} catch (IllegalAccessException e) {
-				log.error(e.getMessage(), e);
+				throw new RRException(e.getMessage(), e);
 			}
 		}
 		if(StringUtils.isBlank(rowKey)) {
@@ -281,19 +282,16 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 			Put put = new Put(Bytes.toBytes(rowKey));
 	    	log.debug("# hbase插入数据rowKey==>[{}],data==>[{}]", rowKey, map);
 			for(String qualifier : map.keySet()) {
-				if(qualifier == null) {
-					continue;
-				}
 				Object value = map.get(qualifier);
 				if(value == null) {
-					value = "";
+					continue;
 				}
 				put.addColumn(Bytes.toBytes(familyColumn), Bytes.toBytes(qualifier), Bytes.toBytes(value.toString())) ;
 			}
 			Table table = getTable();
 	        table.put(put);
-		} catch (IOException e1) {
-			log.error(e1.getMessage(), e1);
+		} catch (IOException e) {
+			throw new RRException(e.getMessage(), e);
 		}
 	}
 	
@@ -331,7 +329,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 					break;
 				}
 			} catch (IllegalArgumentException e) {
-				log.error(e.getMessage(), e);
+				throw new RRException(e.getMessage(), e);
 			}
 		}
 		nameSpace = table.nameSpace();
@@ -399,14 +397,14 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 			aggregationClient = new AggregationClient(config);
 			count = aggregationClient.rowCount(TableName.valueOf(tableName), new LongColumnInterpreter(), scan);
 		} catch (Throwable e) {
-			log.error(e.getMessage(), e);
+			throw new RRException(e.getMessage(), e);
 		} finally {
 			try {
 				if(aggregationClient != null) {
 					aggregationClient.close();
 				}
 			} catch (IOException e) {
-				log.error(e.getMessage(), e);
+				throw new RRException(e.getMessage(), e);
 			}
 		}
 		return count;
@@ -431,7 +429,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 				list.add(changeResult2T(result));
 			}
 		} catch (IOException e) {
-			log.error(e.getMessage(), e);
+			throw new RRException(e.getMessage(), e);
 		}
 		return list;
 	}
