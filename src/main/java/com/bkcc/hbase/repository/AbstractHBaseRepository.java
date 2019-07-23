@@ -6,6 +6,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +53,179 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public abstract class AbstractHBaseRepository<T extends Serializable> {
+	/**
+	 * 【描 述】：统计表全部数据大小
+	 *
+	 * @return
+	 * @since Jun 27, 2019
+	 */
+	public long count() {
+		return count(null, null);
+	}
+	
+	/**
+	 * 【描 述】：根据rowKey范围统计表数据大小
+	 *
+	 * @param beginRowKey
+	 * @param endRowKey
+	 * @return
+	 * @since Jul 21, 2019
+	 */
+	public long count(String beginRowKey, String endRowKey) {
+		return countBySacn(getScan(beginRowKey, endRowKey, null));
+	}
+
+	/**
+	 * 【描 述】：根据RowKey查询，如果查询不到返回null
+	 *
+	 * @param rowKey
+	 * @return T
+	 * @since Jun 26, 2019
+	 */
+	public T get(String rowKey){
+		List<T> list = list(Arrays.asList(rowKey));
+		if(list == null || list.isEmpty()) {
+			return null;
+		}
+		return list.get(0);
+	}
+	
+	/**
+	 * 【描 述】：根据多个RowKey查询，如果查询不到返回空集合
+	 *
+	 * @param rowKeyList
+	 * @return List<T> 
+	 * @since Jun 26, 2019
+	 */
+	public List<T> list(List<String> rowKeyList){
+		List<T> returnList = new ArrayList<>();
+		if(rowKeyList.isEmpty()) {
+			return returnList;
+		}
+		Table table = getTable();
+		try {
+			List<Get> getList = new ArrayList<>();
+			for(String rowKey : rowKeyList) {
+				Get get = new Get(Bytes.toBytes(rowKey));
+				getList.add(get);
+			}
+			Result[] results = table.get(getList);
+			if(results == null || results.length == 0) {
+				return returnList;
+			}
+			for(Result result : results) {
+				T t = changeResult2T(result);
+				if(t != null) {
+					returnList.add(t);
+				}
+			}
+		} catch (IOException e) {
+			throw new RRException(e.getMessage(), e);
+		} finally {
+			try {
+				table.close();
+			} catch (IOException e) {
+				throw new RRException(e.getMessage(), e);
+			}
+		}
+		return returnList;
+	}
+
+	/**
+	 * 【描 述】：查询列表所有数据
+	 *
+	 * @return List<T>
+	 * @since Jun 26, 2019
+	 */
+	public List<T> list(){
+		return list(null, null, null);
+	}
+	
+	/**
+	 * 【描 述】：根据RowKey范围查询列表数据
+	 *
+	 * @param beginRowKey
+	 * @param endRowKey
+	 * @param pageSize
+	 * @return List<T>
+	 * @since Jul 21, 2019
+	 */
+	public List<T> list(String beginRowKey, String endRowKey, Integer pageSize){
+		return listByScan(getScan(beginRowKey, endRowKey, pageSize));
+	}
+
+	/**
+	 * 【描 述】：删除整条数据
+	 *
+	 * @param rowKey
+	 * @since Jun 26, 2019
+	 */
+	public void delete(String rowKey){
+		delete(Arrays.asList(rowKey));
+	}
+	
+	/**
+	 * 【描 述】：批量删除整条数据
+	 *
+	 * @param rowKey
+	 * @since Jun 26, 2019
+	 */
+	public void delete(List<String> rowKeyList){
+		Table table = getTable();
+		try {
+			List<Delete> deletes = new ArrayList<>();
+			for(String rowKey : rowKeyList) {
+				Delete delete = new Delete(Bytes.toBytes(rowKey));
+				deletes.add(delete);
+			}
+			table.delete(deletes);
+		} catch (IOException e) {
+			throw new RRException(e.getMessage(), e);
+		} finally {
+			try {
+				table.close();
+			} catch (IOException e) {
+				throw new RRException(e.getMessage(), e);
+			}
+		}
+	}
+	
+	/**
+	 * 【描 述】：保存数据
+	 *
+	 * @param t 实体 
+	 * @since Jun 26, 2019
+	 */
+	public void save(T t) {
+		save(Arrays.asList(t));
+	}
+	
+	/**
+	 * 【描 述】：批量保存数据
+	 *
+	 * @param t 实体 
+	 * @since Jun 26, 2019
+	 */
+	public void save(List<T> tList) {
+		Table table = getTable();
+		try {
+			List<Put> putList = getPutList(tList);
+			if(putList == null || putList.isEmpty()) {
+				return;
+			}
+	        table.put(putList);
+		} catch (IOException e) {
+			throw new RRException(e.getMessage(), e);
+		} finally {
+			try {
+				table.close();
+			} catch (IOException e) {
+				throw new RRException(e.getMessage(), e);
+			}
+		}
+	}
+	
+	/** ======================================================== 私有方法 ======================================================== */
 	
 	/**
 	 * 【描 述】：HBase配置
@@ -105,202 +279,6 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 	private Class<T> clazz;
 	
 	/**
-	 * 【描 述】：count表
-	 *
-	 * @param beginRowKey
-	 * @param endRowKey
-	 * @return
-	 * @since Jul 21, 2019
-	 */
-	public long count(String beginRowKey, String endRowKey) {
-		return countBySacn(getScan(beginRowKey, endRowKey, null));
-	}
-	
-	/**
-	 * 【描 述】：count表
-	 *
-	 * @return
-	 * @since Jun 27, 2019
-	 */
-	public long countAll() {
-		return countBySacn(getScan(null, null, null));
-	}
-	
-	/**
-	 * 【描 述】：根据多个RowKey查询，如果查询不到返回空集合
-	 *
-	 * @param rowKeyList
-	 * @return List<T> 
-	 * @since Jun 26, 2019
-	 */
-	public List<T> list(List<String> rowKeyList){
-		List<T> returnList = new ArrayList<>();
-		if(rowKeyList.isEmpty()) {
-			return returnList;
-		}
-		try {
-			Table table = getTable();
-			List<Get> getList = new ArrayList<>();
-			for(String rowKey : rowKeyList) {
-				Get get = new Get(Bytes.toBytes(rowKey));
-				getList.add(get);
-			}
-			Result[] results = table.get(getList);
-			if(results == null || results.length == 0) {
-				return returnList;
-			}
-			for(Result result : results) {
-				T t = changeResult2T(result);
-				if(t != null) {
-					returnList.add(t);
-				}
-			}
-		} catch (IOException e) {
-			throw new RRException(e.getMessage(), e);
-		}
-		return returnList;
-	}
-	
-	/**
-	 * 【描 述】：根据RowKey查询，如果查询不到返回null
-	 *
-	 * @param rowKey
-	 * @return T
-	 * @since Jun 26, 2019
-	 */
-	public T get(String rowKey){
-		Result result = null;
-		try {
-			Table table = getTable();
-			Get get = new Get(Bytes.toBytes(rowKey));
-			result = table.get(get);
-		} catch (IOException e) {
-			throw new RRException(e.getMessage(), e);
-		}
-		return changeResult2T(result);
-	}
-	
-	/**
-	 * 【描 述】：根据RowKey范围查询列表数据
-	 *
-	 * @param beginRowKey
-	 * @param endRowKey
-	 * @param pageSize
-	 * @return List<T>
-	 * @since Jul 21, 2019
-	 */
-	public List<T> list(String beginRowKey, String endRowKey, Integer pageSize){
-		return listByScan(getScan(beginRowKey, endRowKey, pageSize));
-	}
-	
-	/**
-	 * 【描 述】：查询列表所有数据
-	 *
-	 * @return List<T>
-	 * @since Jun 26, 2019
-	 */
-	public List<T> listAll(){
-		return listByScan(getScan(null, null, null));
-	}
-	
-	/**
-	 * 【描 述】：批量删除整条数据
-	 *
-	 * @param rowKey
-	 * @since Jun 26, 2019
-	 */
-	public void delete(List<String> rowKeyList){
-		try {
-			Table table = getTable();
-			List<Delete> deletes = new ArrayList<>();
-			for(String rowKey : rowKeyList) {
-				Delete delete = new Delete(Bytes.toBytes(rowKey));
-				deletes.add(delete);
-			}
-			table.delete(deletes);
-		} catch (IOException e) {
-			throw new RRException(e.getMessage(), e);
-		}
-	}
-	
-	/**
-	 * 【描 述】：删除整条数据
-	 *
-	 * @param rowKey
-	 * @since Jun 26, 2019
-	 */
-	public void delete(String rowKey){
-		try {
-			Table table = getTable();
-			Delete delete = new Delete(Bytes.toBytes(rowKey));
-			table.delete(delete);;
-		} catch (IOException e) {
-			throw new RRException(e.getMessage(), e);
-		}
-	}
-	
-	/**
-	 * 【描 述】：保存数据
-	 *
-	 * @param t 实体 
-	 * @since Jun 26, 2019
-	 */
-	public void save(T t) {
-		Field[] fields = t.getClass().getDeclaredFields();
-		String rowKey = "";
-		Map<String, Object> map = new HashMap<>();
-		for(Field f : fields) {
-			try {
-				f.setAccessible(true);
-				String key = f.getName();
-				if(StringUtils.equals("serialVersionUID", key)) {
-					continue;
-				}
-				Object value = f.get(t);
-				HBaseRowkey hb = f.getAnnotation(HBaseRowkey.class);
-				if(hb != null) {
-					rowKey = value == null ? "" : value.toString();
-					continue;
-				}
-				HBaseColumn c = f.getAnnotation(HBaseColumn.class);
-				if(c == null) {
-					continue;
-				}
-				key = StringUtils.isBlank(c.value()) ? key : c.value();
-				map.put(key, value);
-			} catch (IllegalArgumentException e) {
-				throw new RRException(e.getMessage(), e);
-			} catch (IllegalAccessException e) {
-				throw new RRException(e.getMessage(), e);
-			}
-		}
-		if(StringUtils.isBlank(rowKey)) {
-			throw new NullPointerException("RowKey为空，插入失败");
-		}
-		try {
-			
-			Put put = new Put(Bytes.toBytes(rowKey));
-	    	log.debug("# hbase插入数据rowKey==>[{}],data==>[{}]", rowKey, map);
-			for(String qualifier : map.keySet()) {
-				Object value = map.get(qualifier);
-				if(value == null) {
-					continue;
-				}
-				put.addColumn(Bytes.toBytes(familyColumn), Bytes.toBytes(qualifier), Bytes.toBytes(value.toString())) ;
-			}
-			Table table = getTable();
-	        table.put(put);
-		} catch (IOException e) {
-			throw new RRException(e.getMessage(), e);
-		}
-	}
-	
-	
-	
-	/** ======================================================== 私有方法 ======================================================== */
-	
-
-	/**
 	 * 【描 述】：初始化
 	 *
 	 * @throws Exception
@@ -350,10 +328,14 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 	 * @throws IOException
 	 * @since Jul 18, 2019
 	 */
-	private Table getTable() throws IOException {
-		Table table = connection.getTable(TableName.valueOf(tableName));
-		return table;
+	private Table getTable(){
+		try {
+			return connection.getTable(TableName.valueOf(tableName));
+		} catch (IOException e) {
+			throw new RRException("# [" + tableName + "]表不存在：" + e.getMessage(), e);
+		}
 	}
+	
 	/**
 	 * 【描 述】：结果解析器
 	 *
@@ -422,14 +404,20 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 	 */
 	private List<T> listByScan(Scan scan){
 		List<T> list = new ArrayList<>();
+		Table table = getTable();
 		try {
-			Table table = getTable();
 			ResultScanner results = table.getScanner(scan);
 			for (Result result : results){
 				list.add(changeResult2T(result));
 			}
 		} catch (IOException e) {
 			throw new RRException(e.getMessage(), e);
+		} finally {
+			try {
+				table.close();
+			} catch (IOException e) {
+				throw new RRException(e.getMessage(), e);
+			}
 		}
 		return list;
 	}
@@ -493,5 +481,61 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 		}
 	}
 	
+	
+	/**
+	 * 【描 述】：获取添加数据PUTList
+	 *
+	 * @param tList
+	 * @return
+	 * @since Jul 23, 2019
+	 */
+	private List<Put> getPutList(List<T> tList) {
+		List<Put> putList = new ArrayList<>();
+		for(T t : tList) {
+			Field[] fields = t.getClass().getDeclaredFields();
+			String rowKey = "";
+			Map<String, Object> map = new HashMap<>();
+			for(Field f : fields) {
+				try {
+					f.setAccessible(true);
+					String key = f.getName();
+					if(StringUtils.equals("serialVersionUID", key)) {
+						continue;
+					}
+					Object value = f.get(t);
+					HBaseRowkey hb = f.getAnnotation(HBaseRowkey.class);
+					if(hb != null) {
+						rowKey = value == null ? "" : value.toString();
+						continue;
+					}
+					HBaseColumn c = f.getAnnotation(HBaseColumn.class);
+					if(c == null) {
+						continue;
+					}
+					key = StringUtils.isBlank(c.value()) ? key : c.value();
+					map.put(key, value);
+				} catch (IllegalArgumentException e) {
+					throw new RRException(e.getMessage(), e);
+				} catch (IllegalAccessException e) {
+					throw new RRException(e.getMessage(), e);
+				}
+			}
+			if(StringUtils.isBlank(rowKey)) {
+				log.warn("# RowKey为空，插入失败[{}]", t);
+				continue;
+			}
+			Put put = new Put(Bytes.toBytes(rowKey));
+			log.debug("# hbase插入数据rowKey==>[{}],data==>[{}]", rowKey, map);
+			for(String qualifier : map.keySet()) {
+				Object value = map.get(qualifier);
+				if(value == null) {
+					continue;
+				}
+				put.addColumn(Bytes.toBytes(familyColumn), Bytes.toBytes(qualifier), Bytes.toBytes(value.toString())) ;
+			}
+			putList.add(put);
+		}
+		return putList;
+	}
 	
 }///:~
