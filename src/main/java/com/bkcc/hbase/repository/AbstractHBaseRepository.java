@@ -529,9 +529,10 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 			for(String qualifier : map.keySet()) {
 				Object value = map.get(qualifier);
 				if(value == null) {
-					continue;
+					put.addColumn(Bytes.toBytes(familyColumn), Bytes.toBytes(qualifier), null) ;
+				} else {
+					put.addColumn(Bytes.toBytes(familyColumn), Bytes.toBytes(qualifier), Bytes.toBytes(value.toString())) ;
 				}
-				put.addColumn(Bytes.toBytes(familyColumn), Bytes.toBytes(qualifier), Bytes.toBytes(value.toString())) ;
 			}
 			putList.add(put);
 		}
