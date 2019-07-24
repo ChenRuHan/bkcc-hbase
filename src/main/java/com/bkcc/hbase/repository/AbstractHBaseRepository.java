@@ -8,8 +8,10 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.PostConstruct;
 
@@ -192,25 +194,27 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 	}
 	
 	/**
-	 * 【描 述】：保存数据
+	 * 【描 述】：保存/更新数据
 	 *
-	 * @param t 实体 
-	 * @since Jun 26, 2019
+	 * @param t 数据实体
+	 * @param columns 需要更新的列。不传为全部列
+	 * @since Jul 24, 2019
 	 */
-	public void save(T t) {
+	public void save(T t, String... columns) {
 		save(Arrays.asList(t));
 	}
 	
 	/**
-	 * 【描 述】：批量保存数据
+	 * 【描 述】：批量保存/更新数据
 	 *
-	 * @param t 实体 
-	 * @since Jun 26, 2019
+	 * @param tList 数据集合
+	 * @param columns 需要更新的列。不传为全部列
+	 * @since Jul 24, 2019
 	 */
-	public void save(List<T> tList) {
+	public void save(List<T> tList, String... columns) {
 		Table table = getTable();
 		try {
-			List<Put> putList = getPutList(tList);
+			List<Put> putList = getPutList(tList, columns);
 			if(putList == null || putList.isEmpty()) {
 				return;
 			}
@@ -486,7 +490,6 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 		}
 	}
 	
-	
 	/**
 	 * 【描 述】：获取添加数据PUTList
 	 *
@@ -494,7 +497,11 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 	 * @return
 	 * @since Jul 23, 2019
 	 */
-	private List<Put> getPutList(List<T> tList) {
+	private List<Put> getPutList(List<T> tList, String... columns) {
+		Set<String> colSet = new HashSet<>();
+		if(columns != null && columns.length > 0) {
+			colSet = new HashSet<>(Arrays.asList(columns));
+		}
 		List<Put> putList = new ArrayList<>();
 		for(T t : tList) {
 			Field[] fields = t.getClass().getDeclaredFields();
@@ -518,7 +525,13 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 						continue;
 					}
 					key = StringUtils.isBlank(c.value()) ? key : c.value();
-					map.put(key, value);
+					if(colSet.isEmpty()) {
+						map.put(key, value);
+					} else {
+						if(colSet.contains(key)) {
+							map.put(key, value);
+						}
+					}
 				} catch (IllegalArgumentException e) {
 					throw new RRException(e.getMessage(), e);
 				} catch (IllegalAccessException e) {
