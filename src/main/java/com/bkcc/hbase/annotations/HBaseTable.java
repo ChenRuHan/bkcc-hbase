@@ -31,12 +31,12 @@ public @interface HBaseTable {
 	String tableName();
 	
 	/**
-	 * 【描 述】：命名空间，默认为default，可以自己根据业务逻辑自己设置，命名空间需自己创建
+	 * 【描 述】：命名空间，根据业务逻辑自己设置，命名空间需自己创建
 	 *
 	 * @return
 	 * @since Jul 19, 2019
 	 */
-	String nameSpace() default "default";
+	String nameSpace();
 	
 	/**
 	 * 【描 述】：列族名称 默认fc

@@ -34,6 +34,7 @@ import org.apache.hadoop.hbase.client.coprocessor.LongColumnInterpreter;
 import org.apache.hadoop.hbase.filter.PageFilter;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 import com.alibaba.fastjson.JSONObject;
 import com.bkcc.hbase.annotations.HBaseColumn;
@@ -234,6 +235,14 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 	 */
 	@Autowired
 	private Configuration config;
+	
+	/**
+	 * 【描 述】：环境 test、dev、pro
+	 *
+	 *  @since  Jul 24, 2019 v1.0
+	 */
+	@Value("${bkcc.env}")
+	private String env;
 
 	/**
 	 * 【描 述】：HBase链接
@@ -242,13 +251,6 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 	 */
 	@Autowired
 	private Connection connection;
-	
-	/**
-	 * 【描 述】：命名空间
-	 *
-	 *  @since  Jul 1, 2019 v1.0
-	 */
-	private String nameSpace;
 	
 	/**
 	 * 【描 述】：表名称
@@ -310,8 +312,11 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 				throw new RRException(e.getMessage(), e);
 			}
 		}
-		nameSpace = table.nameSpace();
-		tableName = nameSpace + ":" + table.tableName();
+		String ns = table.nameSpace();
+		if(!StringUtils.equals(env, "pro")) {
+			ns = env + "_" + ns;
+		}
+		tableName = ns + ":" + table.tableName();
 		familyColumn = table.familyColumn();
 		log.debug("# tableName==>[{}], familyColnum==>[{}]", tableName, familyColumn);
 		if(table.createTable()) {
