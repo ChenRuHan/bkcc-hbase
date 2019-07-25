@@ -149,12 +149,36 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 	 *
 	 * @param beginRowKey
 	 * @param endRowKey
+	 * @return List<T>
+	 * @since Jul 21, 2019
+	 */
+	public List<T> list(String beginRowKey, String endRowKey){
+		return listByScan(getScan(beginRowKey, endRowKey, null, false));
+	}
+	
+	/**
+	 * 【描 述】：根据RowKey范围查询列表数据
+	 *
+	 * @param beginRowKey
+	 * @param endRowKey
 	 * @param pageSize 查询数量
 	 * @return List<T>
 	 * @since Jul 21, 2019
 	 */
 	public List<T> list(String beginRowKey, String endRowKey, Integer pageSize){
 		return listByScan(getScan(beginRowKey, endRowKey, pageSize, false));
+	}
+	
+	/**
+	 * 【描 述】：根据RowKey范围查询列表数据，降序查询
+	 *
+	 * @param beginRowKey
+	 * @param endRowKey
+	 * @return List<T>
+	 * @since Jul 21, 2019
+	 */
+	public List<T> listReversed(String beginRowKey, String endRowKey){
+		return listByScan(getScan(endRowKey, beginRowKey, null, true));
 	}
 	
 	/**
