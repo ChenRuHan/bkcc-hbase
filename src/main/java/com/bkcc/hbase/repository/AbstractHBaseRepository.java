@@ -75,7 +75,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 	 * @since Jul 21, 2019
 	 */
 	public long count(String beginRowKey, String endRowKey) {
-		return countBySacn(getScan(beginRowKey, endRowKey, null));
+		return countBySacn(getScan(beginRowKey, endRowKey, null, false));
 	}
 
 	/**
@@ -149,12 +149,25 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 	 *
 	 * @param beginRowKey
 	 * @param endRowKey
-	 * @param pageSize
+	 * @param pageSize 查询数量
 	 * @return List<T>
 	 * @since Jul 21, 2019
 	 */
 	public List<T> list(String beginRowKey, String endRowKey, Integer pageSize){
-		return listByScan(getScan(beginRowKey, endRowKey, pageSize));
+		return listByScan(getScan(beginRowKey, endRowKey, pageSize, false));
+	}
+	
+	/**
+	 * 【描 述】：根据RowKey范围查询列表数据，降序查询
+	 *
+	 * @param beginRowKey
+	 * @param endRowKey
+	 * @param pageSize 查询数量
+	 * @return List<T>
+	 * @since Jul 21, 2019
+	 */
+	public List<T> listReversed(String beginRowKey, String endRowKey, Integer pageSize){
+		return listByScan(getScan(endRowKey, beginRowKey, pageSize, true));
 	}
 
 	/**
@@ -435,15 +448,17 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 	/**
 	 * 【描 述】：构造Scan
 	 *
-	 * @param beginRowKey
-	 * @param endRowKey
-	 * @param pageSize
+	 * @param beginRowKey beginRowKey
+	 * @param endRowKey endRowKey  
+	 * @param pageSize 查询数量
+	 * @param reversed 是否倒叙查询
 	 * @return
 	 * @since Jun 27, 2019
 	 */
-	private Scan getScan(String beginRowKey, String endRowKey, Integer pageSize) {
+	private Scan getScan(String beginRowKey, String endRowKey, Integer pageSize, boolean reversed) {
 		Scan scan = new Scan();
 		scan.addFamily(Bytes.toBytes(familyColumn));
+		scan.setReversed(reversed);
 		if(StringUtils.isNotBlank(beginRowKey)) {
 			scan.withStartRow(Bytes.toBytes(beginRowKey));
 		}
