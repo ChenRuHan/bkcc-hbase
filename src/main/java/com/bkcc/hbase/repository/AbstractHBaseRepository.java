@@ -7,6 +7,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -100,7 +101,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 	 * @return List<T> 
 	 * @since Jun 26, 2019
 	 */
-	public List<T> list(List<String> rowKeyList){
+	public List<T> list(Collection<String> rowKeyList){
 		List<T> returnList = new ArrayList<>();
 		if(rowKeyList.isEmpty()) {
 			return returnList;
@@ -210,7 +211,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 	 * @param rowKey
 	 * @since Jun 26, 2019
 	 */
-	public void delete(List<String> rowKeyList){
+	public void delete(Collection<String> rowKeyList){
 		Table table = getTable();
 		try {
 			List<Delete> deletes = new ArrayList<>();
@@ -258,7 +259,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 	 * @param columns 需要更新的列。不传为全部列
 	 * @since Jul 24, 2019
 	 */
-	public void save(List<T> tList, String... columns) {
+	public void save(Collection<T> tList, String... columns) {
 		Table table = getTable();
 		try {
 			List<Put> putList = getPutList(tList, columns);
@@ -546,7 +547,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 	 * @return
 	 * @since Jul 23, 2019
 	 */
-	private List<Put> getPutList(List<T> tList, String... columns) {
+	private List<Put> getPutList(Collection<T> tList, String... columns) {
 		Set<String> colSet = new HashSet<>();
 		if(columns != null && columns.length > 0) {
 			colSet = new HashSet<>(Arrays.asList(columns));
