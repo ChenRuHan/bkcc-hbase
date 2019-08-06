@@ -234,11 +234,21 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 	 * 【描 述】：保存/更新数据
 	 *
 	 * @param t 数据实体
+	 * @since Jul 24, 2019
+	 */
+	public void save(T t) {
+		save(Arrays.asList(t));
+	}
+	
+	/**
+	 * 【描 述】：保存/更新数据
+	 *
+	 * @param t 数据实体
 	 * @param columns 需要更新的列。不传为全部列
 	 * @since Jul 24, 2019
 	 */
 	public void save(T t, String... columns) {
-		save(Arrays.asList(t));
+		save(Arrays.asList(t), columns);
 	}
 	
 	/**
