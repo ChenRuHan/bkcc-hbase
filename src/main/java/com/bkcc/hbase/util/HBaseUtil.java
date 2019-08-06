@@ -9,6 +9,17 @@ package com.bkcc.hbase.util;
  *  @since          Jun 26, 2019 
  */
 public class HBaseUtil {
+	
+	/**
+	 * 【描 述】：获取升序排列的时间戳，长度为13位
+	 *
+	 * @param timeMillis 时间毫秒
+	 * @return
+	 * @since Aug 6, 2019
+	 */
+	public static String getAscCurrent(Long timeMillis) {
+		return fillKey((9999999999999L - timeMillis), 13);
+	}
 
 	/**
 	 * 【描 述】：获取升序排列的时间戳，长度为13位
@@ -17,7 +28,7 @@ public class HBaseUtil {
 	 * @since Jun 26, 2019
 	 */
 	public static String getAscCurrent() {
-		return fillKey((9999999999999L - System.currentTimeMillis()), 13);
+		return getAscCurrent(System.currentTimeMillis());
 	}
 	
 	/**
