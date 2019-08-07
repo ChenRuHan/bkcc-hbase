@@ -593,7 +593,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 				continue;
 			}
 			Put put = new Put(Bytes.toBytes(rowKey));
-			log.debug("# hbase插入数据rowKey==>[{}],data==>[{}]", rowKey, map);
+			log.debug("# [{}]插入数据rowKey==>[{}],data==>[{}]", tableName, rowKey, map);
 			for(String qualifier : map.keySet()) {
 				Object value = map.get(qualifier);
 				if(value == null) {
