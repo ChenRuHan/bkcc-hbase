@@ -1,5 +1,7 @@
 package com.bkcc.hbase.util;
 
+import java.util.Random;
+
 /**
  * 【描 述】：HBase工具类
  * 【环 境】：J2SE 1.8
@@ -10,6 +12,25 @@ package com.bkcc.hbase.util;
  */
 public class HBaseUtil {
 	
+	/**
+	 * 【描 述】：获取随机数
+	 *
+	 * @param size 位数
+	 * @return
+	 * @since Aug 9, 2019
+	 */
+	public static String getRandomNum(int size) {
+		StringBuffer sb = new StringBuffer();
+		Random ran = new Random();
+		for(int i = 0; i < size; i++) {
+			int r = ran.nextInt(9);
+			while(r < 0) {
+				r = ran.nextInt(9);
+			}
+			sb.append(r);
+		}
+		return sb.toString();
+	}
 	/**
 	 * 【描 述】：获取升序排列的时间戳，长度为13位
 	 *

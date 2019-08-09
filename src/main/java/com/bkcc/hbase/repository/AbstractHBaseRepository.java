@@ -57,6 +57,9 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public abstract class AbstractHBaseRepository<T extends Serializable> {
+	
+	
+	
 	/**
 	 * 【描 述】：统计表全部数据大小
 	 *
@@ -193,6 +196,36 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
 	 */
 	public List<T> listReversed(String beginRowKey, String endRowKey, Integer pageSize){
 		return listByScan(getScan(endRowKey, beginRowKey, pageSize, true));
+	}
+	
+	/**
+	 * 【描 述】：删除全部数据
+	 *
+	 * @param rowKey
+	 * @since Jun 26, 2019
+	 */
+	public void delete(){
+        Admin admin = null;
+        try {
+			admin = connection.getAdmin();
+			if(!admin.isTableDisabled(TableName.valueOf(tableName))) {
+				admin.disableTable(TableName.valueOf(tableName));
+			}
+			admin.truncateTable(TableName.valueOf(tableName), true);
+			if(!admin.isTableEnabled(TableName.valueOf(tableName))) {
+				admin.enableTable(TableName.valueOf(tableName));
+			}
+		} catch (IOException e) {
+			throw new RRException(e.getMessage(), e);
+		} finally {
+            if (admin != null) {
+                try {
+                    admin.close();
+                } catch (IOException e) {
+                	throw new RRException(e.getMessage(), e);
+                }
+            }
+		}
 	}
 
 	/**
