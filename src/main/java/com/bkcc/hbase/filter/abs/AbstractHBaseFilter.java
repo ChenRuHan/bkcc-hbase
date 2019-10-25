@@ -1,7 +1,6 @@
 package com.bkcc.hbase.filter.abs;
 
 import com.bkcc.hbase.filter.HBaseFilter;
-import com.bkcc.hbase.filter.itf.HBaseFilterItf;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hbase.filter.CompareFilter;
 import org.apache.hadoop.hbase.filter.FilterList;
@@ -21,7 +20,7 @@ import java.util.List;
  * @version v1.0
  * @since 2019-10-25 09:31
  */
-public abstract class AbsHBaseFilter implements HBaseFilterItf {
+public abstract class AbstractHBaseFilter {
 
     /**
      * 【描 述】：过滤器
@@ -38,7 +37,6 @@ public abstract class AbsHBaseFilter implements HBaseFilterItf {
      * @author 陈汝晗
      * @since 2019/10/25 09:30
      */
-    @Override
     public List<HBaseFilter> addFilter(HBaseFilter filter) {
         return addFilter(Arrays.asList(filter));
     }
@@ -51,7 +49,6 @@ public abstract class AbsHBaseFilter implements HBaseFilterItf {
      * @author 陈汝晗
      * @since 2019/10/25 09:30
      */
-    @Override
     public List<HBaseFilter> addFilter(List<HBaseFilter> filters) {
         if (filterList == null) {
             filterList = new ArrayList<>();
@@ -73,13 +70,9 @@ public abstract class AbsHBaseFilter implements HBaseFilterItf {
      * @author 陈汝晗
      * @since 2019/10/25 09:19
      */
-    @Override
-    public void addFilterList(FilterList fList, String familyColumn) {
-        if (filterList == null || filterList.isEmpty()) {
+    protected void addFilterList(FilterList fList, String familyColumn) {
+        if (fList == null || filterList == null || filterList.isEmpty()) {
             return;
-        }
-        if (fList == null) {
-            fList = new FilterList(FilterList.Operator.MUST_PASS_ALL);
         }
         byte[] fc = Bytes.toBytes(familyColumn);
         for (HBaseFilter vo : filterList) {

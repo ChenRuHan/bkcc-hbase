@@ -5,7 +5,7 @@ import com.bkcc.hbase.annotations.HBaseColumn;
 import com.bkcc.hbase.annotations.HBaseRowkey;
 import com.bkcc.hbase.annotations.HBaseTable;
 import com.bkcc.hbase.filter.HBaseFilter;
-import com.bkcc.hbase.filter.abs.AbsHBaseFilter;
+import com.bkcc.hbase.filter.abs.AbstractHBaseFilter;
 import com.bkcc.hbase.repository.itf.HBaseCrudItf;
 import com.bkcc.util.mytoken.exception.RRException;
 import lombok.extern.slf4j.Slf4j;
@@ -57,7 +57,7 @@ import java.util.Set;
  * @since Jun 26, 2019
  */
 @Slf4j
-public abstract class AbstractHBaseRepository<T extends Serializable> extends AbsHBaseFilter implements HBaseCrudItf<T> {
+public abstract class AbstractHBaseRepository<T extends Serializable> extends AbstractHBaseFilter implements HBaseCrudItf<T> {
 
     /**
      * 【描 述】：统计表全部数据大小
