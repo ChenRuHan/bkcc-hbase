@@ -37,8 +37,8 @@ public abstract class AbstractHBaseFilter {
      * @author 陈汝晗
      * @since 2019/10/25 09:30
      */
-    public List<HBaseFilter> addFilter(HBaseFilter filter) {
-        return addFilter(Arrays.asList(filter));
+    public void addFilter(HBaseFilter filter) {
+        addFilter(Arrays.asList(filter));
     }
 
     /**
@@ -49,15 +49,14 @@ public abstract class AbstractHBaseFilter {
      * @author 陈汝晗
      * @since 2019/10/25 09:30
      */
-    public List<HBaseFilter> addFilter(List<HBaseFilter> filters) {
+    public void addFilter(List<HBaseFilter> filters) {
         if (filterList == null) {
             filterList = new ArrayList<>();
         }
         if (filters == null) {
-            return filterList;
+            return;
         }
         filterList.addAll(filters);
-        return filterList;
     }
 
 
@@ -76,7 +75,7 @@ public abstract class AbstractHBaseFilter {
         }
         byte[] fc = Bytes.toBytes(familyColumn);
         for (HBaseFilter vo : filterList) {
-            if (vo == null || vo.getRule() == null || StringUtils.isBlank(vo.getColumn())) {
+            if (vo == null || vo.getRule() == null) {
                 continue;
             }
             if (vo.isRowKey()) {
@@ -92,7 +91,12 @@ public abstract class AbstractHBaseFilter {
                         rf = new RowFilter(CompareFilter.CompareOp.NOT_EQUAL, new RegexStringComparator(vo.getValue().toString()));
                         break;
                 }
-                fList.addFilter(rf);
+                if (rf != null) {
+                    fList.addFilter(rf);
+                }
+                continue;
+            }
+            if (StringUtils.isBlank(vo.getColumn())) {
                 continue;
             }
 
@@ -136,6 +140,7 @@ public abstract class AbstractHBaseFilter {
                 fList.addFilter(filter);
             }
         }
+        filterList.clear();
     }
 
 }///:~

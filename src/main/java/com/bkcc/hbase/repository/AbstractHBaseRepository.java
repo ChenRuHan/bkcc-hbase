@@ -640,21 +640,21 @@ public abstract class AbstractHBaseRepository<T extends Serializable> extends Ab
      * @since 2019/10/24 15:58
      */
     private void close(Admin admin, Table table, AggregationClient aggregationClient) {
-        if (admin == null) {
+        if (admin != null) {
             try {
                 admin.close();
             } catch (IOException e) {
                 throw new RRException(e.getMessage(), e);
             }
         }
-        if (table == null) {
+        if (table != null) {
             try {
                 table.close();
             } catch (IOException e) {
                 throw new RRException(e.getMessage(), e);
             }
         }
-        if (aggregationClient == null) {
+        if (aggregationClient != null) {
             try {
                 aggregationClient.close();
             } catch (IOException e) {
