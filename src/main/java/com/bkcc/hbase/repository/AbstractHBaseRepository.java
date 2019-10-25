@@ -4,7 +4,9 @@ import com.alibaba.fastjson.JSONObject;
 import com.bkcc.hbase.annotations.HBaseColumn;
 import com.bkcc.hbase.annotations.HBaseRowkey;
 import com.bkcc.hbase.annotations.HBaseTable;
-import com.bkcc.hbase.entity.HBaseFilter;
+import com.bkcc.hbase.filter.HBaseFilter;
+import com.bkcc.hbase.filter.abs.AbsHBaseFilter;
+import com.bkcc.hbase.repository.itf.HBaseCrudItf;
 import com.bkcc.util.mytoken.exception.RRException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -25,12 +27,8 @@ import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.client.coprocessor.AggregationClient;
 import org.apache.hadoop.hbase.client.coprocessor.LongColumnInterpreter;
-import org.apache.hadoop.hbase.filter.CompareFilter;
 import org.apache.hadoop.hbase.filter.FilterList;
 import org.apache.hadoop.hbase.filter.PageFilter;
-import org.apache.hadoop.hbase.filter.RegexStringComparator;
-import org.apache.hadoop.hbase.filter.RowFilter;
-import org.apache.hadoop.hbase.filter.SingleColumnValueFilter;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -59,30 +57,7 @@ import java.util.Set;
  * @since Jun 26, 2019
  */
 @Slf4j
-public abstract class AbstractHBaseRepository<T extends Serializable> {
-
-
-    public List<HBaseFilter> addFilter(HBaseFilter filter) {
-        if (filterList == null) {
-            filterList = new ArrayList<>();
-        }
-        if (filter == null) {
-            return filterList;
-        }
-        filterList.add(filter);
-        return filterList;
-    }
-
-    public List<HBaseFilter> addFilter(List<HBaseFilter> filters) {
-        if (filterList == null) {
-            filterList = new ArrayList<>();
-        }
-        if (filters == null) {
-            return filterList;
-        }
-        filterList.addAll(filters);
-        return filterList;
-    }
+public abstract class AbstractHBaseRepository<T extends Serializable> extends AbsHBaseFilter implements HBaseCrudItf<T> {
 
     /**
      * 【描 述】：统计表全部数据大小
@@ -90,6 +65,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
      * @return
      * @since Jun 27, 2019
      */
+    @Override
     public long count() {
         return count(null, null);
     }
@@ -102,6 +78,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
      * @return
      * @since Jul 21, 2019
      */
+    @Override
     public long count(String beginRowKey, String endRowKey) {
         return countBySacn(getScan(beginRowKey, endRowKey, null, false));
     }
@@ -113,6 +90,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
      * @return T
      * @since Jun 26, 2019
      */
+    @Override
     public T get(String rowKey) {
         List<T> list = list(Arrays.asList(rowKey));
         if (list == null || list.isEmpty()) {
@@ -128,6 +106,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
      * @return List<T>
      * @since Jun 26, 2019
      */
+    @Override
     public List<T> list(Collection<String> rowKeyList) {
         List<T> returnList = new ArrayList<>();
         if (rowKeyList.isEmpty()) {
@@ -164,6 +143,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
      * @return List<T>
      * @since Jun 26, 2019
      */
+    @Override
     public List<T> list() {
         return list(null, null, null);
     }
@@ -176,6 +156,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
      * @return List<T>
      * @since Jul 21, 2019
      */
+    @Override
     public List<T> list(String beginRowKey, String endRowKey) {
         return listByScan(getScan(beginRowKey, endRowKey, null, false));
     }
@@ -189,6 +170,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
      * @return List<T>
      * @since Jul 21, 2019
      */
+    @Override
     public List<T> list(String beginRowKey, String endRowKey, Integer pageSize) {
         return listByScan(getScan(beginRowKey, endRowKey, pageSize, false));
     }
@@ -201,6 +183,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
      * @return List<T>
      * @since Jul 21, 2019
      */
+    @Override
     public List<T> listReversed(String beginRowKey, String endRowKey) {
         return listByScan(getScan(endRowKey, beginRowKey, null, true));
     }
@@ -214,6 +197,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
      * @return List<T>
      * @since Jul 21, 2019
      */
+    @Override
     public List<T> listReversed(String beginRowKey, String endRowKey, Integer pageSize) {
         return listByScan(getScan(endRowKey, beginRowKey, pageSize, true));
     }
@@ -224,6 +208,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
      * @param rowKey
      * @since Jun 26, 2019
      */
+    @Override
     public void delete() {
         Admin admin = null;
         try {
@@ -248,6 +233,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
      * @param rowKey
      * @since Jun 26, 2019
      */
+    @Override
     public void delete(String rowKey) {
         delete(Arrays.asList(rowKey));
     }
@@ -258,6 +244,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
      * @param rowKey
      * @since Jun 26, 2019
      */
+    @Override
     public void delete(Collection<String> rowKeyList) {
         Table table = getTable();
         try {
@@ -280,6 +267,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
      * @param t 数据实体
      * @since Jul 24, 2019
      */
+    @Override
     public void save(T t) {
         save(Arrays.asList(t));
     }
@@ -291,6 +279,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
      * @param columns 需要更新的列。不传为全部列
      * @since Jul 24, 2019
      */
+    @Override
     public void save(T t, String... columns) {
         save(Arrays.asList(t), columns);
     }
@@ -302,6 +291,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
      * @param columns 需要更新的列。不传为全部列
      * @since Jul 24, 2019
      */
+    @Override
     public void save(Collection<T> tList, String... columns) {
         Table table = getTable();
         try {
@@ -318,7 +308,6 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
     }
 
     /** ======================================================== 私有方法 ======================================================== */
-
     /**
      * 【描 述】：HBase配置
      *
@@ -536,91 +525,13 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
             scan.withStopRow(Bytes.toBytes(endRowKey));
         }
         FilterList fList = new FilterList(FilterList.Operator.MUST_PASS_ALL);
-        addFilterList(fList);
+        super.addFilterList(fList, familyColumn);
         if (pageSize != null && pageSize > 0) {
             fList.addFilter(new PageFilter(pageSize));
         }
         scan.setFilter(fList);
         return scan;
     }
-
-    /**
-     * 【描 述】：构造过滤器
-     *
-     * @param fList
-     * @return void
-     * @author 陈汝晗
-     * @since 2019/10/25 09:19
-     */
-    private void addFilterList(FilterList fList) {
-        if (filterList == null || filterList.isEmpty()) {
-            return;
-        }
-        byte[] fc = Bytes.toBytes(familyColumn);
-        for (HBaseFilter vo : filterList) {
-            if (vo == null || vo.getRule() == null || StringUtils.isBlank(vo.getColumn())) {
-                continue;
-            }
-            if (vo.isRowKey()) {
-                if (vo.getValue() == null || StringUtils.isBlank(vo.getValue().toString())) {
-                    continue;
-                }
-                RowFilter rf = null;
-                switch (vo.getRule()) {
-                    case MATCH_REGEX:
-                        rf = new RowFilter(CompareFilter.CompareOp.EQUAL, new RegexStringComparator(vo.getValue().toString()));
-                        break;
-                    case NOT_MATCH_REGEX:
-                        rf = new RowFilter(CompareFilter.CompareOp.NOT_EQUAL, new RegexStringComparator(vo.getValue().toString()));
-                        break;
-                }
-                fList.addFilter(rf);
-                continue;
-            }
-
-            byte[] c = Bytes.toBytes(vo.getColumn());
-            byte[] value = vo.getValue() == null ? null : Bytes.toBytes(vo.getValue().toString());
-            SingleColumnValueFilter filter = null;
-            switch (vo.getRule()) {
-                case LESS:
-                    filter = (new SingleColumnValueFilter(fc, c, CompareFilter.CompareOp.LESS, value));
-                    break;
-                case LESS_OR_EQUAL:
-                    filter = (new SingleColumnValueFilter(fc, c, CompareFilter.CompareOp.LESS_OR_EQUAL, value));
-                    break;
-                case EQUAL:
-                    filter = (new SingleColumnValueFilter(fc, c, CompareFilter.CompareOp.EQUAL, value));
-                    break;
-                case GREATER:
-                    filter = (new SingleColumnValueFilter(fc, c, CompareFilter.CompareOp.GREATER, value));
-                    break;
-                case GREATER_OR_EQUAL:
-                    filter = (new SingleColumnValueFilter(fc, c, CompareFilter.CompareOp.GREATER_OR_EQUAL, value));
-                    break;
-                case NOT_EQUAL:
-                    filter = (new SingleColumnValueFilter(fc, c, CompareFilter.CompareOp.NOT_EQUAL, value));
-                    break;
-                case MATCH_REGEX:
-                    if (vo.getValue() == null || StringUtils.isBlank(vo.getValue().toString())) {
-                        break;
-                    }
-                    filter = (new SingleColumnValueFilter(fc, c, CompareFilter.CompareOp.EQUAL, new RegexStringComparator(vo.getValue().toString())));
-                    break;
-                case NOT_MATCH_REGEX:
-                    if (vo.getValue() == null || StringUtils.isBlank(vo.getValue().toString())) {
-                        break;
-                    }
-                    filter = (new SingleColumnValueFilter(fc, c, CompareFilter.CompareOp.NOT_EQUAL, new RegexStringComparator(vo.getValue().toString())));
-                    break;
-            }
-            if (filter != null) {
-                filter.setFilterIfMissing(true);
-                fList.addFilter(filter);
-            }
-        }
-
-    }
-
 
     /**
      * 【描 述】：创建表

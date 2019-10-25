@@ -1,6 +1,5 @@
-package com.bkcc.hbase.entity;
+package com.bkcc.hbase.filter;
 
-import com.bkcc.hbase.enums.HBaseFilterRule;
 import lombok.Data;
 
 /**

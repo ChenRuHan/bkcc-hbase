@@ -1,4 +1,4 @@
-package com.bkcc.hbase.enums;
+package com.bkcc.hbase.filter;
 
 public enum HBaseFilterRule{
     LESS,
