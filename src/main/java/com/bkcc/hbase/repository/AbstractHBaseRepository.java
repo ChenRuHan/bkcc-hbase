@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.bkcc.hbase.annotations.HBaseColumn;
 import com.bkcc.hbase.annotations.HBaseRowkey;
 import com.bkcc.hbase.annotations.HBaseTable;
+import com.bkcc.hbase.entity.HBaseFilter;
 import com.bkcc.util.mytoken.exception.RRException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -29,6 +30,7 @@ import org.apache.hadoop.hbase.filter.FilterList;
 import org.apache.hadoop.hbase.filter.PageFilter;
 import org.apache.hadoop.hbase.filter.RegexStringComparator;
 import org.apache.hadoop.hbase.filter.RowFilter;
+import org.apache.hadoop.hbase.filter.SingleColumnValueFilter;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -60,6 +62,28 @@ import java.util.Set;
 public abstract class AbstractHBaseRepository<T extends Serializable> {
 
 
+    public List<HBaseFilter> addFilter(HBaseFilter filter) {
+        if (filterList == null) {
+            filterList = new ArrayList<>();
+        }
+        if (filter == null) {
+            return filterList;
+        }
+        filterList.add(filter);
+        return filterList;
+    }
+
+    public List<HBaseFilter> addFilter(List<HBaseFilter> filters) {
+        if (filterList == null) {
+            filterList = new ArrayList<>();
+        }
+        if (filters == null) {
+            return filterList;
+        }
+        filterList.addAll(filters);
+        return filterList;
+    }
+
     /**
      * 【描 述】：统计表全部数据大小
      *
@@ -79,7 +103,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
      * @since Jul 21, 2019
      */
     public long count(String beginRowKey, String endRowKey) {
-        return countBySacn(getScan(beginRowKey, endRowKey, null, false, null));
+        return countBySacn(getScan(beginRowKey, endRowKey, null, false));
     }
 
     /**
@@ -153,7 +177,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
      * @since Jul 21, 2019
      */
     public List<T> list(String beginRowKey, String endRowKey) {
-        return listByScan(getScan(beginRowKey, endRowKey, null, false, null));
+        return listByScan(getScan(beginRowKey, endRowKey, null, false));
     }
 
     /**
@@ -166,21 +190,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
      * @since Jul 21, 2019
      */
     public List<T> list(String beginRowKey, String endRowKey, Integer pageSize) {
-        return listByScan(getScan(beginRowKey, endRowKey, pageSize, false, null));
-    }
-
-    /**
-     * 【描 述】：根据RowKey范围查询列表数据
-     *
-     * @param beginRowKey
-     * @param endRowKey
-     * @param pageSize    查询数量
-     * @param regexRowKey RowKey正则表达式
-     * @return List<T>
-     * @since Jul 21, 2019
-     */
-    public List<T> list(String beginRowKey, String endRowKey, Integer pageSize, String regexRowKey) {
-        return listByScan(getScan(beginRowKey, endRowKey, pageSize, false, regexRowKey));
+        return listByScan(getScan(beginRowKey, endRowKey, pageSize, false));
     }
 
     /**
@@ -192,7 +202,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
      * @since Jul 21, 2019
      */
     public List<T> listReversed(String beginRowKey, String endRowKey) {
-        return listByScan(getScan(endRowKey, beginRowKey, null, true, null));
+        return listByScan(getScan(endRowKey, beginRowKey, null, true));
     }
 
     /**
@@ -205,21 +215,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
      * @since Jul 21, 2019
      */
     public List<T> listReversed(String beginRowKey, String endRowKey, Integer pageSize) {
-        return listByScan(getScan(endRowKey, beginRowKey, pageSize, true, null));
-    }
-
-    /**
-     * 【描 述】：根据RowKey范围查询列表数据，降序查询
-     *
-     * @param beginRowKey
-     * @param endRowKey
-     * @param pageSize    查询数量
-     * @param regexRowKey RowKey正则表达式
-     * @return List<T>
-     * @since Jul 21, 2019
-     */
-    public List<T> listReversed(String beginRowKey, String endRowKey, Integer pageSize, String regexRowKey) {
-        return listByScan(getScan(endRowKey, beginRowKey, pageSize, true, regexRowKey));
+        return listByScan(getScan(endRowKey, beginRowKey, pageSize, true));
     }
 
     /**
@@ -376,6 +372,13 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
     private Class<T> clazz;
 
     /**
+     * 【描 述】：过滤器
+     *
+     * @since 2019/10/25 08:43
+     */
+    private List<HBaseFilter> filterList;
+
+    /**
      * 【描 述】：初始化
      *
      * @throws Exception
@@ -522,7 +525,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
      * @return
      * @since Jun 27, 2019
      */
-    private Scan getScan(String beginRowKey, String endRowKey, Integer pageSize, boolean reversed, String regexRowKey) {
+    private Scan getScan(String beginRowKey, String endRowKey, Integer pageSize, boolean reversed) {
         Scan scan = new Scan();
         scan.addFamily(Bytes.toBytes(familyColumn));
         scan.setReversed(reversed);
@@ -532,17 +535,92 @@ public abstract class AbstractHBaseRepository<T extends Serializable> {
         if (StringUtils.isNotBlank(endRowKey)) {
             scan.withStopRow(Bytes.toBytes(endRowKey));
         }
-        FilterList filterList = new FilterList(FilterList.Operator.MUST_PASS_ALL);
+        FilterList fList = new FilterList(FilterList.Operator.MUST_PASS_ALL);
+        addFilterList(fList);
         if (pageSize != null && pageSize > 0) {
-            filterList.addFilter(new PageFilter(pageSize));
+            fList.addFilter(new PageFilter(pageSize));
         }
-        if (StringUtils.isNotBlank(regexRowKey)) {
-            RowFilter rf = new RowFilter(CompareFilter.CompareOp.EQUAL, new RegexStringComparator(regexRowKey));
-            filterList.addFilter(rf);
-        }
-        scan.setFilter(filterList);
+        scan.setFilter(fList);
         return scan;
     }
+
+    /**
+     * 【描 述】：构造过滤器
+     *
+     * @param fList
+     * @return void
+     * @author 陈汝晗
+     * @since 2019/10/25 09:19
+     */
+    private void addFilterList(FilterList fList) {
+        if (filterList == null || filterList.isEmpty()) {
+            return;
+        }
+        byte[] fc = Bytes.toBytes(familyColumn);
+        for (HBaseFilter vo : filterList) {
+            if (vo == null || vo.getRule() == null || StringUtils.isBlank(vo.getColumn())) {
+                continue;
+            }
+            if (vo.isRowKey()) {
+                if (vo.getValue() == null || StringUtils.isBlank(vo.getValue().toString())) {
+                    continue;
+                }
+                RowFilter rf = null;
+                switch (vo.getRule()) {
+                    case MATCH_REGEX:
+                        rf = new RowFilter(CompareFilter.CompareOp.EQUAL, new RegexStringComparator(vo.getValue().toString()));
+                        break;
+                    case NOT_MATCH_REGEX:
+                        rf = new RowFilter(CompareFilter.CompareOp.NOT_EQUAL, new RegexStringComparator(vo.getValue().toString()));
+                        break;
+                }
+                fList.addFilter(rf);
+                continue;
+            }
+
+            byte[] c = Bytes.toBytes(vo.getColumn());
+            byte[] value = vo.getValue() == null ? null : Bytes.toBytes(vo.getValue().toString());
+            SingleColumnValueFilter filter = null;
+            switch (vo.getRule()) {
+                case LESS:
+                    filter = (new SingleColumnValueFilter(fc, c, CompareFilter.CompareOp.LESS, value));
+                    break;
+                case LESS_OR_EQUAL:
+                    filter = (new SingleColumnValueFilter(fc, c, CompareFilter.CompareOp.LESS_OR_EQUAL, value));
+                    break;
+                case EQUAL:
+                    filter = (new SingleColumnValueFilter(fc, c, CompareFilter.CompareOp.EQUAL, value));
+                    break;
+                case GREATER:
+                    filter = (new SingleColumnValueFilter(fc, c, CompareFilter.CompareOp.GREATER, value));
+                    break;
+                case GREATER_OR_EQUAL:
+                    filter = (new SingleColumnValueFilter(fc, c, CompareFilter.CompareOp.GREATER_OR_EQUAL, value));
+                    break;
+                case NOT_EQUAL:
+                    filter = (new SingleColumnValueFilter(fc, c, CompareFilter.CompareOp.NOT_EQUAL, value));
+                    break;
+                case MATCH_REGEX:
+                    if (vo.getValue() == null || StringUtils.isBlank(vo.getValue().toString())) {
+                        break;
+                    }
+                    filter = (new SingleColumnValueFilter(fc, c, CompareFilter.CompareOp.EQUAL, new RegexStringComparator(vo.getValue().toString())));
+                    break;
+                case NOT_MATCH_REGEX:
+                    if (vo.getValue() == null || StringUtils.isBlank(vo.getValue().toString())) {
+                        break;
+                    }
+                    filter = (new SingleColumnValueFilter(fc, c, CompareFilter.CompareOp.NOT_EQUAL, new RegexStringComparator(vo.getValue().toString())));
+                    break;
+            }
+            if (filter != null) {
+                filter.setFilterIfMissing(true);
+                fList.addFilter(filter);
+            }
+        }
+
+    }
+
 
     /**
      * 【描 述】：创建表
