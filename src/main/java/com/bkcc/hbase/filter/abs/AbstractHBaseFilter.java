@@ -101,38 +101,23 @@ public abstract class AbstractHBaseFilter {
             }
 
             byte[] c = Bytes.toBytes(vo.getColumn());
-            byte[] value = vo.getValue() == null ? null : Bytes.toBytes(vo.getValue().toString());
             SingleColumnValueFilter filter = null;
             switch (vo.getRule()) {
                 case LESS:
-                    filter = (new SingleColumnValueFilter(fc, c, CompareFilter.CompareOp.LESS, value));
-                    break;
                 case LESS_OR_EQUAL:
-                    filter = (new SingleColumnValueFilter(fc, c, CompareFilter.CompareOp.LESS_OR_EQUAL, value));
-                    break;
                 case EQUAL:
-                    filter = (new SingleColumnValueFilter(fc, c, CompareFilter.CompareOp.EQUAL, value));
-                    break;
                 case GREATER:
-                    filter = (new SingleColumnValueFilter(fc, c, CompareFilter.CompareOp.GREATER, value));
-                    break;
                 case GREATER_OR_EQUAL:
-                    filter = (new SingleColumnValueFilter(fc, c, CompareFilter.CompareOp.GREATER_OR_EQUAL, value));
-                    break;
                 case NOT_EQUAL:
-                    filter = (new SingleColumnValueFilter(fc, c, CompareFilter.CompareOp.NOT_EQUAL, value));
+                    filter = (new SingleColumnValueFilter(fc, c, vo.getRule().getCompareOp(), vo.getRule().getValue(vo.getValue())));
                     break;
                 case MATCH_REGEX:
-                    if (vo.getValue() == null || StringUtils.isBlank(vo.getValue().toString())) {
-                        break;
-                    }
-                    filter = (new SingleColumnValueFilter(fc, c, CompareFilter.CompareOp.EQUAL, new RegexStringComparator(vo.getValue().toString())));
-                    break;
                 case NOT_MATCH_REGEX:
-                    if (vo.getValue() == null || StringUtils.isBlank(vo.getValue().toString())) {
+                    RegexStringComparator regexString = vo.getRule().getRegexValue(vo.getValue());
+                    if (regexString == null) {
                         break;
                     }
-                    filter = (new SingleColumnValueFilter(fc, c, CompareFilter.CompareOp.NOT_EQUAL, new RegexStringComparator(vo.getValue().toString())));
+                    filter = (new SingleColumnValueFilter(fc, c, vo.getRule().getCompareOp(), regexString));
                     break;
             }
             if (filter != null) {
@@ -142,5 +127,6 @@ public abstract class AbstractHBaseFilter {
         }
         filterList.clear();
     }
+
 
 }///:~
