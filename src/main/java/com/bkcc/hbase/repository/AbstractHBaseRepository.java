@@ -374,7 +374,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> extends Ab
      * @since Jul 21, 2019
      */
     @SuppressWarnings("unchecked")
-    @PostConstruct
+//    @PostConstruct
     private void init() throws Exception {
         log.debug("# 初始化hbase表信息---begin");
         Type type = getClass().getGenericSuperclass();
