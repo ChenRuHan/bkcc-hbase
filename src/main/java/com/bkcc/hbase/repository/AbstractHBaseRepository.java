@@ -313,7 +313,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> extends Ab
      *
      * @since Jun 26, 2019 v1.0
      */
-    @Autowired
+//    @Autowired
     private Configuration config;
 
     /**
@@ -329,7 +329,7 @@ public abstract class AbstractHBaseRepository<T extends Serializable> extends Ab
      *
      * @since Jun 26, 2019 v1.0
      */
-    @Autowired
+//    @Autowired
     private Connection connection;
 
     /**
