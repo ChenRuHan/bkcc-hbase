@@ -1,8 +1,9 @@
 package com.bkcc.hbase.conifg;
 
-import java.util.Map;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
+import java.util.Map;
 
 /**
  * 【描 述】：Hbase参数配置
@@ -16,5 +17,17 @@ import lombok.Data;
 @Data
 public class HBaseProperties {
 
+    /*
+
+# hbase配置信息
+# 生产环境：hb-2zejh008601i8n321-001.hbase.rds.aliyuncs.com
+# 研发环境：master,slave01,slave02
+hbase:
+  config:
+    hbase.zookeeper.quorum: master,slave01,slave02
+    hbase.zookeeper.property.clientPort: 2181
+
+
+     */
 	private Map<String, String> config;
 }
